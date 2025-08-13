@@ -9,6 +9,9 @@ def require_agreement(func):
         user_id = update.effective_user.id
         user = User.get(telegram_id=user_id)
 
+        if not user:
+            await update.message.reply_text("❌ Siz ro'yxatdan o'tmagansiz\n\nIltimos /start buyrug'ini qayta bosing!")
+
         if not user.is_agree:
             # Tugmalar
             keyboard = [

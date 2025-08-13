@@ -2,8 +2,9 @@ from config import ADMIN_ID
 import os
 
 LOG_FILE_NAME = 'logs/bot.log'
+DB_FILE_NAME = 'database/main.db'
 
-async def send_logs(update, context) -> None:
+async def send_files(update, context) -> None:
     user_id = update.effective_user.id
     
     if user_id != int(ADMIN_ID):
@@ -14,28 +15,49 @@ async def send_logs(update, context) -> None:
         )
         return
 
-    if not os.path.exists(LOG_FILE_NAME):
-        await update.message.reply_text(
-            "📂 <b>Log fayli topilmadi</b>\n"
-            "Hozircha log yozuvlari mavjud emas.",
-            parse_mode="HTML"
-        )
-        return
+    files_to_send = []
 
-    try:
+    # Log fayl mavjudligini tekshirish
+    if os.path.exists(LOG_FILE_NAME):
+        files_to_send.append((LOG_FILE_NAME, "📄 Bot log fayli"))
+    else:
         await update.message.reply_text(
-            "📤 <b>Log fayli yuborilmoqda...</b>",
+            "⚠️ <b>Log fayli topilmadi</b>",
             parse_mode="HTML"
         )
-        with open(LOG_FILE_NAME, "rb") as log_file:
-            await update.message.reply_document(
-                log_file,
-                caption="✅ <b>Log fayli muvaffaqiyatli yuborildi</b>",
-                parse_mode="HTML"
-            )
-    except Exception as e:
+
+    # Database fayl mavjudligini tekshirish
+    if os.path.exists(DB_FILE_NAME):
+        files_to_send.append((DB_FILE_NAME, "🗄 Database fayli"))
+    else:
         await update.message.reply_text(
-            f"⚠️ <b>Xatolik:</b> Faylni yuborishda muammo yuz berdi.\n"
-            f"<code>{e}</code>",
+            "⚠️ <b>Database fayli topilmadi</b>",
+            parse_mode="HTML"
+        )
+
+    # Fayllarni yuborish
+    if files_to_send:
+        await update.message.reply_text(
+            "📤 <b>Fayllar yuborilmoqda...</b>",
+            parse_mode="HTML"
+        )
+
+        for file_path, caption in files_to_send:
+            try:
+                with open(file_path, "rb") as file:
+                    await update.message.reply_document(
+                        file,
+                        caption=f"✅ {caption} muvaffaqiyatli yuborildi",
+                        parse_mode="HTML"
+                    )
+            except Exception as e:
+                await update.message.reply_text(
+                    f"⚠️ <b>Xatolik:</b> {file_path} faylini yuborishda muammo yuz berdi.\n"
+                    f"<code>{e}</code>",
+                    parse_mode="HTML"
+                )
+    else:
+        await update.message.reply_text(
+            "ℹ️ Yuboriladigan fayllar topilmadi.",
             parse_mode="HTML"
         )
